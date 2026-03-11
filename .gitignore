@@ -1,0 +1,45 @@
+# Dataset
+WLASL/
+
+# Downloaded videos (huge)
+WLASL/videos/
+WLASL/hf_videos/
+
+# Extracted keypoints (large)
+WLASL/keypoints/
+
+# OpenPose data (already in WLASL repo)
+WLASL/data/pose_per_individual_videos/
+
+# Python environments
+asl_tasks_env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dylib
+.env
+
+# Large model/data files
+testing/all_features.npy
+api/old_models/
+
+# Node modules
+mobile/node_modules/
+
+# Expo
+mobile/.expo/
+mobile/ios/
+mobile/android/
+
+# Environment files
+mobile/.env
+api/.env
+.env
+
+# Testing
+testing/
+
+# OS
+.DS_Store

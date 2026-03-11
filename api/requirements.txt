@@ -1,0 +1,26 @@
+# API server
+fastapi==0.135.1
+uvicorn==0.41.0
+python-multipart==0.0.22
+python-dotenv==1.2.2
+
+# ML
+torch==2.10.0
+numpy==2.2.6
+
+# MediaPipe
+mediapipe==0.10.32
+opencv-python==4.13.0.92
+
+# HuggingFace (letter model)
+transformers==5.3.0
+huggingface_hub==1.6.0
+safetensors==0.7.0
+tokenizers==0.22.2
+
+# Image processing
+pillow==12.1.1
+
+# Utilities
+requests==2.28.2
+tqdm==4.65.2
