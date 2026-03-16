@@ -25,6 +25,14 @@ __pycache__/
 testing/all_features.npy
 api/old_models/
 api/training/att_matrices.pt
+api/data/splits/asl300.json
+api/data/splits/asl1000.json
+api/data/splits/asl2000.json
+
+api/data/labels/word_labels_300.json
+api/data/labels/word_labels_1000.json
+api/data/labels/word_labels_2000.json
+
 
 # Node modules
 mobile/node_modules/
