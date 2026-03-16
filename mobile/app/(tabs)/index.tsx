@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
   Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -22,6 +21,7 @@ const COLORS = {
   muted: "rgba(255,255,255,0.3)",
 };
 
+// Standard 26-letter ASL alphabet only
 const ASL_ALPHABET = [
   "A",
   "B",
@@ -49,9 +49,6 @@ const ASL_ALPHABET = [
   "X",
   "Y",
   "Z",
-  "del",
-  "_",
-  "nun",
 ];
 
 export default function HomeScreen() {
@@ -59,7 +56,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.scrollContent}>
+      <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.statusPill}>
@@ -72,7 +69,7 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* CTA Button */}
+        {/* CTA */}
         <TouchableOpacity
           style={styles.ctaButton}
           onPress={() => router.push("/(tabs)/camera")}
@@ -82,19 +79,19 @@ export default function HomeScreen() {
           <Text style={styles.ctaArrow}>→</Text>
         </TouchableOpacity>
 
-        {/* Info Cards */}
+        {/* Stats */}
         <View style={styles.cardsRow}>
           <View style={styles.infoCard}>
             <Text style={styles.infoCardNumber}>100</Text>
             <Text style={styles.infoCardLabel}>Words supported</Text>
           </View>
           <View style={styles.infoCard}>
-            <Text style={styles.infoCardNumber}>Live</Text>
-            <Text style={styles.infoCardLabel}>Real-time detection</Text>
+            <Text style={styles.infoCardNumber}>69.2%</Text>
+            <Text style={styles.infoCardLabel}>Model accuracy</Text>
           </View>
         </View>
 
-        {/* ASL Reference */}
+        {/* Alphabet reference */}
         <Text style={styles.sectionLabel}>ASL ALPHABET</Text>
         <View style={styles.alphabetGrid}>
           {ASL_ALPHABET.map((letter) => (
@@ -104,11 +101,11 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        {/* Bottom Note */}
-        <View style={styles.bottomNote}>
-          <Text style={styles.bottomNoteText}>
-            Position your hand clearly in frame for best results. Ensure good
-            lighting.
+        {/* Tip */}
+        <View style={styles.tipCard}>
+          <Text style={styles.tipText}>
+            Position your hand clearly in frame with good lighting for best
+            results.
           </Text>
         </View>
       </View>
@@ -116,12 +113,11 @@ export default function HomeScreen() {
   );
 }
 
+const LETTER_SIZE = (width - 40 - 6 * 6) / 7;
+
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#0a0a14",
-  },
-  scrollContent: {
+  root: { flex: 1, backgroundColor: COLORS.bg },
+  content: {
     flex: 1,
     paddingTop: 60,
     paddingBottom: 16,
@@ -129,9 +125,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
 
-  header: {
-    marginBottom: 16,
-  },
+  header: { marginBottom: 16 },
   statusPill: {
     flexDirection: "row",
     alignItems: "center",
@@ -196,16 +190,9 @@ const styles = StyleSheet.create({
     color: "#fff",
     letterSpacing: -0.3,
   },
-  ctaArrow: {
-    fontSize: 18,
-    color: "rgba(255,255,255,0.7)",
-  },
+  ctaArrow: { fontSize: 18, color: "rgba(255,255,255,0.7)" },
 
-  cardsRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 20,
-  },
+  cardsRow: { flexDirection: "row", gap: 12, marginBottom: 20 },
   infoCard: {
     flex: 1,
     backgroundColor: COLORS.card,
@@ -221,11 +208,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     marginBottom: 2,
   },
-  infoCardLabel: {
-    fontSize: 11,
-    color: COLORS.muted,
-    fontWeight: "500",
-  },
+  infoCardLabel: { fontSize: 11, color: COLORS.muted, fontWeight: "500" },
 
   sectionLabel: {
     fontSize: 11,
@@ -235,7 +218,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 10,
   },
-
   alphabetGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -243,7 +225,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   letterCard: {
-    width: (width - 40 - 6 * 6) / 7,
+    width: LETTER_SIZE,
     aspectRatio: 1,
     backgroundColor: COLORS.card,
     borderWidth: 1,
@@ -260,14 +242,14 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
 
-  bottomNote: {
+  tipCard: {
     backgroundColor: COLORS.accentSoft,
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
     borderRadius: 14,
     padding: 12,
   },
-  bottomNoteText: {
+  tipText: {
     fontSize: 12,
     color: COLORS.accentText,
     lineHeight: 18,

@@ -45,14 +45,24 @@ export default function CameraScreen() {
   const device = useCameraDevice(cameraPosition);
   const cameraRef = useRef<Camera>(null);
 
+  // Ref to abort in-flight letter prediction requests when a new one fires
+  const abortRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
     requestPermission();
   }, []);
 
+  // ── Letter mode: continuous prediction every 500ms ─────────────────────────
   useEffect(() => {
     if (!hasPermission || mode !== "letter") return;
+
     const interval = setInterval(async () => {
       if (!cameraRef.current || !isActive) return;
+
+      // Cancel any in-flight request before firing a new one
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
+
       try {
         const snapshot = await cameraRef.current.takePhoto({
           enableShutterSound: false,
@@ -63,20 +73,47 @@ export default function CameraScreen() {
           type: "image/jpeg",
           name: "frame.jpg",
         } as any);
+
         const res = await fetch(`${API_BASE}/predict/letter`, {
           method: "POST",
           body: form,
+          signal: abortRef.current.signal,
         });
         const data = await res.json();
         if (data.letter && data.confidence > 0.7) {
           setPrediction({ letter: data.letter, confidence: data.confidence });
         }
-      } catch (e) {
-        console.error("Letter prediction error:", e);
+      } catch (e: any) {
+        // Ignore abort errors — these are intentional
+        if (e?.name !== "AbortError") {
+          console.error("Letter prediction error:", e);
+        }
       }
     }, 500);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      abortRef.current?.abort();
+    };
   }, [hasPermission, isActive, mode]);
+
+  // ── Countdown helper — uses an interval so state updates render correctly ──
+  const startCountdown = (): Promise<void> => {
+    return new Promise((resolve) => {
+      let count = 3;
+      setCountdown(count);
+      const interval = setInterval(() => {
+        count -= 1;
+        if (count === 0) {
+          clearInterval(interval);
+          setCountdown(null);
+          resolve();
+        } else {
+          setCountdown(count);
+        }
+      }, 1000);
+    });
+  };
 
   const handleDebug = async () => {
     if (!cameraRef.current || isRecording) return;
@@ -118,16 +155,13 @@ export default function CameraScreen() {
 
   const handleRecordToggle = async () => {
     if (isRecording || isProcessing || countdown !== null) return;
-    setCountdown(3);
-    await new Promise((res) => setTimeout(res, 1000));
-    setCountdown(2);
-    await new Promise((res) => setTimeout(res, 1000));
-    setCountdown(1);
-    await new Promise((res) => setTimeout(res, 1000));
-    setCountdown(null);
+
+    await startCountdown();
+
     if (!cameraRef.current) return;
     setIsRecording(true);
     setWordPrediction(null);
+
     try {
       await cameraRef.current.startRecording({
         fileType: "mp4",
@@ -145,11 +179,12 @@ export default function CameraScreen() {
               body: form,
             });
             const data = await res.json();
-            if (data.word)
+            if (data.word) {
               setWordPrediction({
                 word: data.word,
                 confidence: data.confidence,
               });
+            }
           } catch (e) {
             console.error("Word prediction error:", e);
           } finally {
@@ -162,6 +197,7 @@ export default function CameraScreen() {
           setIsProcessing(false);
         },
       });
+
       setTimeout(async () => {
         setIsRecording(false);
         await cameraRef.current?.stopRecording();
@@ -231,19 +267,13 @@ export default function CameraScreen() {
     ? Math.round(wordPrediction.confidence * 100)
     : 0;
 
-  // Frame bounds — same for both modes
   const FRAME_TOP = "15%";
   const FRAME_BOTTOM = "15%";
   const FRAME_SIDE = "6%";
-  const FRAME_RADIUS = 0;
   const OVERLAY_COLOR = "rgba(10,10,20,0.72)";
-
-  const isLetter = mode === "letter";
   const borderColor = isRecording
     ? "rgba(255,69,58,0.85)"
-    : isLetter
-      ? "rgba(99,91,255,0.5)"
-      : "rgba(99,91,255,0.5)";
+    : "rgba(99,91,255,0.5)";
 
   return (
     <View style={styles.root}>
@@ -258,7 +288,7 @@ export default function CameraScreen() {
           audio={false}
         />
 
-        {/* Dark overlays outside the frame — same for both modes */}
+        {/* Dark overlays outside the signing frame */}
         <View
           style={[
             styles.overlayTop,
@@ -294,7 +324,7 @@ export default function CameraScreen() {
           ]}
         />
 
-        {/* Inner frame border */}
+        {/* Frame border */}
         <View
           style={[
             styles.frameBox,
@@ -303,7 +333,6 @@ export default function CameraScreen() {
               left: FRAME_SIDE,
               right: FRAME_SIDE,
               bottom: FRAME_BOTTOM,
-              borderRadius: FRAME_RADIUS,
               borderColor,
             },
           ]}
@@ -512,19 +541,12 @@ export default function CameraScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#0a0a14" },
-
   cameraContainer: { flex: 1, position: "relative", overflow: "hidden" },
-
   overlayTop: { position: "absolute", top: 0, left: 0, right: 0 },
   overlayBottom: { position: "absolute", bottom: 0, left: 0, right: 0 },
   overlayLeft: { position: "absolute", left: 0 },
   overlayRight: { position: "absolute", right: 0 },
-
-  frameBox: {
-    position: "absolute",
-    borderWidth: 2,
-  },
-
+  frameBox: { position: "absolute", borderWidth: 2, borderRadius: 0 },
   cameraTopRow: {
     position: "absolute",
     top: 60,
@@ -576,7 +598,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   flipText: { fontSize: 18, color: "#fff" },
-
   frameLabelWrap: {
     position: "absolute",
     top: 0,
@@ -604,7 +625,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: "hidden",
   },
-
   panel: {
     backgroundColor: "#0a0a14",
     borderTopWidth: 1,
@@ -612,7 +632,6 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 36,
   },
-
   modeToggle: {
     flexDirection: "row",
     backgroundColor: "rgba(255,255,255,0.04)",
@@ -635,7 +654,6 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.3)",
   },
   modeBtnTextActive: { color: "#fff" },
-
   detectionCard: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -683,13 +701,11 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.25)",
     fontWeight: "500",
   },
-
   divider: {
     height: 1,
     backgroundColor: "rgba(255,255,255,0.06)",
     marginBottom: 16,
   },
-
   outputRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -734,7 +750,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "rgba(255,255,255,0.3)",
   },
-
   pauseButton: {
     backgroundColor: "rgba(255,255,255,0.04)",
     borderWidth: 1,
@@ -752,7 +767,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "rgba(255,255,255,0.4)",
   },
-
   recordButton: {
     backgroundColor: "rgba(255,255,255,0.04)",
     borderWidth: 1,
@@ -770,7 +784,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "rgba(255,255,255,0.4)",
   },
-
   debugButton: {
     backgroundColor: "rgba(255,255,255,0.04)",
     borderWidth: 1,
@@ -785,7 +798,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "rgba(255,255,255,0.25)",
   },
-
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.85)",
@@ -821,7 +833,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   modalCloseText: { fontSize: 14, fontWeight: "700", color: "#fff" },
-
   centeredState: {
     flex: 1,
     backgroundColor: "#0a0a14",
