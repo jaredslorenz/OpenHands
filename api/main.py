@@ -80,15 +80,14 @@ class ASLClassifier(nn.Module):
         out     = (out * attn_w).sum(dim=1)
         return self.classifier(out)
 
-
 # ── Config — all paths via env vars, relative defaults for deployment ─────────
 MODEL_PATH_POSE = os.getenv("MODEL_PATH_POSE", "model/pose_landmarker_lite.task")
 MODEL_PATH_HAND = os.getenv("MODEL_PATH_HAND", "model/hand_landmarker.task")
-WORD_MODEL_PATH = os.getenv("WORD_MODEL_PATH", "lstm_model_v7.pth")
-SPLIT_FILE      = os.getenv("SPLIT_FILE",      "../WLASL/data/splits/asl100.json")
+WORD_MODEL_PATH = os.getenv("WORD_MODEL_PATH_100", "lstm_model_v7.pth")
+LABELS_FILE = os.getenv("LABELS_FILE_100", "word_labels_100.json")
 
-with open(SPLIT_FILE) as f:
-    word_labels = sorted([d['gloss'] for d in json.load(f)])
+with open(LABELS_FILE) as f:
+    word_labels = json.load(f)
 
 word_model = ASLClassifier(num_classes=len(word_labels))
 ckpt = torch.load(WORD_MODEL_PATH, map_location='cpu')

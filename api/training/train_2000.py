@@ -1,5 +1,7 @@
 """
-BiLSTM v7 — asl100 — 69.2% val accuracy
+BiLSTM v7 — asl2000
+Identical architecture to v7 (69.2% on asl100)
+Target: establish baseline for 2000-word vocabulary
 """
 
 import os, json, random
@@ -14,10 +16,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 KEYPOINTS_DIR = os.getenv("KEYPOINTS_DIR", "../WLASL/keypoints")
-SPLIT_FILE    = os.getenv("SPLIT_FILE_100", "../WLASL/data/splits/asl100.json")
-OUTPUT_MODEL  = os.getenv("OUTPUT_MODEL_100", "lstm_model_v7.pth")
+SPLIT_FILE    = os.getenv("SPLIT_FILE_2000", "../WLASL/data/splits/asl2000.json")
+OUTPUT_MODEL  = os.getenv("OUTPUT_MODEL_2000", "lstm_model_v7_2000.pth")
 
-NUM_CLASSES  = 100
+NUM_CLASSES  = 2000
 NUM_FRAMES   = 50
 NUM_JOINTS   = 55
 IN_CHANNELS  = 4
@@ -160,7 +162,7 @@ train_loader = DataLoader(ASLDataset(train_samples, augment=True),
 val_loader   = DataLoader(ASLDataset(val_samples, augment=False),
                           batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
 
-model     = ASLClassifier().to(DEVICE)
+model     = ASLClassifier(num_classes=NUM_CLASSES).to(DEVICE)
 optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=1e-2)
 scheduler = OneCycleLR(optimizer, max_lr=LR,
                        steps_per_epoch=len(train_loader), epochs=EPOCHS)
@@ -216,4 +218,5 @@ for epoch in range(1, EPOCHS+1):
             break
 
 print(f"\nDone. Best val: {best_val:.1f}%")
+print(f"asl100: 69.2% | asl300: 54.3%")
 print(f"Saved to: {OUTPUT_MODEL}")

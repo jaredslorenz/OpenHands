@@ -24,6 +24,7 @@ __pycache__/
 # Large model/data files
 testing/all_features.npy
 api/old_models/
+api/training/att_matrices.pt
 
 # Node modules
 mobile/node_modules/
